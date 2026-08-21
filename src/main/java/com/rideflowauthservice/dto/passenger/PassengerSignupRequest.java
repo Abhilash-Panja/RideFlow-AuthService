@@ -1,8 +1,7 @@
-package com.rideflowauthservice.dto;
+package com.rideflowauthservice.dto.passenger;
 
 import lombok.*;
 
-import java.util.Date;
 @Getter
 @Setter
 @Builder
