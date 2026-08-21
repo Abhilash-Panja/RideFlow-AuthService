@@ -1,6 +1,7 @@
-package org.example.uberreviewservice.repository;
+package com.rideflowauthservice.repositories;
 
-import org.example.uberreviewservice.model.Booking;
+
+import com.rideflowauthservice.models.Booking;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface BookingRepository extends JpaRepository<Booking,Long> {
