@@ -1,8 +1,6 @@
 package com.rideflowauthservice.models;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
@@ -26,4 +24,7 @@ public class Passenger extends BaseModel{
     private String phoneNumber;
     @OneToMany(mappedBy = "passenger")
     private List<Booking>bookingList=new ArrayList<>();
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role;
 }
