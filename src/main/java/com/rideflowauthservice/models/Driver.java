@@ -1,7 +1,6 @@
 package com.rideflowauthservice.models;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
@@ -19,4 +18,7 @@ public class Driver extends BaseModel{
     private  String licenceNumber;
     @OneToMany(mappedBy = "driver")
     List<Booking> bookingList=new ArrayList<>();
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role;
 }
