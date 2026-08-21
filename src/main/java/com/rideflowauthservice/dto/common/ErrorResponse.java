@@ -1,4 +1,4 @@
-package org.com.quora_backend.dto.common;
+package com.rideflowauthservice.dto.common;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
