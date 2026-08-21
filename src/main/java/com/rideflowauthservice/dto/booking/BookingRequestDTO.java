@@ -1,4 +1,4 @@
-package org.example.uberreviewservice.dto.booking;
+package com.rideflowauthservice.dto.booking;
 
 import lombok.*;
 

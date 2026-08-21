@@ -1,10 +1,10 @@
-package org.example.uberreviewservice.dto.booking;
+package com.rideflowauthservice.dto.booking;
 
+import com.rideflowauthservice.dto.driver.DriverSummaryDTO;
+import com.rideflowauthservice.dto.passenger.PassengerSummaryDTO;
+import com.rideflowauthservice.dto.review.ReviewSummaryDTO;
+import com.rideflowauthservice.models.BookingStatus;
 import lombok.*;
-import org.example.uberreviewservice.dto.driver.DriverSummaryDTO;
-import org.example.uberreviewservice.dto.passenger.PassengerSummaryDTO;
-import org.example.uberreviewservice.dto.review.ReviewSummaryDTO;
-import org.example.uberreviewservice.model.BookingStatus;
 
 import java.time.LocalTime;
 

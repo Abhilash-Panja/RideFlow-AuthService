@@ -1,4 +1,4 @@
-package com.rideflowauthservice.dto;
+package com.rideflowauthservice.dto.passenger;
 
 import lombok.*;
 
