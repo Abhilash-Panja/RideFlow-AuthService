@@ -1,5 +1,6 @@
-package com.rideflowauthservice.dto.passenger;
+package com.rideflowauthservice.dto.auth;
 
+import com.rideflowauthservice.models.Role;
 import lombok.*;
 
 @Getter
@@ -15,5 +16,7 @@ public class PassengerSignupRequest {
     private String phoneNumber;
 
     private String name;
+
+    private Role role;
 
 }
