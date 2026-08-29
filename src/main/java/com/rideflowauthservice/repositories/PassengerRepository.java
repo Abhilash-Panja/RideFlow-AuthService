@@ -1,7 +1,8 @@
 package com.rideflowauthservice.repositories;
 
 
-import com.rideflowauthservice.models.Passenger;
+
+import com.rideflow.rideflowentityservice.models.Passenger;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

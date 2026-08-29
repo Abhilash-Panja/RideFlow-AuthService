@@ -7,6 +7,8 @@ import com.rideflowauthservice.dto.auth.PassengerSignupRequest;
 import com.rideflowauthservice.security.PassengerPrinciple;
 import com.rideflowauthservice.service.AuthService;
 import com.rideflowauthservice.service.JwtService;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,10 +19,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -58,5 +57,13 @@ public class AuthController {
                         .build();
         servletResponse.setHeader(HttpHeaders.SET_COOKIE,responseCookie.toString());
         return ResponseEntity.status(HttpStatus.OK).body(new PassengerLoginResponse(token));
+    }
+
+    @GetMapping("/validate")
+    public ResponseEntity<?>validate( HttpServletRequest servletRequest){
+        for(Cookie cookie: servletRequest.getCookies()){
+            System.out.println(cookie.getValue());
+        }
+        return ResponseEntity.status(HttpStatus.OK).body("Success");
     }
 }

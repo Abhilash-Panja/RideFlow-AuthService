@@ -1,9 +1,10 @@
 package com.rideflowauthservice.dto.booking;
 
+import com.rideflow.rideflowentityservice.models.BookingStatus;
 import com.rideflowauthservice.dto.driver.DriverSummaryDTO;
 import com.rideflowauthservice.dto.passenger.PassengerSummaryDTO;
 import com.rideflowauthservice.dto.review.ReviewSummaryDTO;
-import com.rideflowauthservice.models.BookingStatus;
+
 import lombok.*;
 
 import java.time.LocalTime;

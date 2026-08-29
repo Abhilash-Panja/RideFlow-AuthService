@@ -1,6 +1,7 @@
 package com.rideflowauthservice.security;
 
-import com.rideflowauthservice.models.Passenger;
+
+import com.rideflow.rideflowentityservice.models.Passenger;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
