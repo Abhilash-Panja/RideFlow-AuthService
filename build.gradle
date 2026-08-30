@@ -41,7 +41,7 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
     // Source: https://mvnrepository.com/artifact/org.mapstruct/mapstruct-processor
     implementation 'org.mapstruct:mapstruct-processor:1.7.0.Beta2'
-    implementation 'com.rideflow:Rideflow-EntityService:0.0.1-SNAPSHOT'
+    implementation 'com.rideflow:Rideflow-EntityService:0.0.2-SNAPSHOT'
 }
 
 tasks.named('test') {
