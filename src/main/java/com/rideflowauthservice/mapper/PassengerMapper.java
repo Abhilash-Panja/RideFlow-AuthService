@@ -1,10 +1,11 @@
 package com.rideflowauthservice.mapper;
 
 
+import com.rideflow.rideflowentityservice.models.Passenger;
 import com.rideflowauthservice.dto.passenger.PassengerRequestDTO;
 import com.rideflowauthservice.dto.passenger.PassengerResponseDTO;
 import com.rideflowauthservice.dto.passenger.PassengerSummaryDTO;
-import com.rideflowauthservice.models.Passenger;
+
 
 public class PassengerMapper {
 

@@ -1,6 +1,7 @@
 package com.rideflowauthservice.dto.booking;
 
-import com.rideflowauthservice.models.BookingStatus;
+
+import com.rideflow.rideflowentityservice.models.BookingStatus;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 

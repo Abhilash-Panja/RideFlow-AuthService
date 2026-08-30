@@ -1,6 +1,7 @@
 package com.rideflowauthservice.dto.auth;
 
-import com.rideflowauthservice.models.Role;
+
+import com.rideflow.rideflowentityservice.models.Role;
 import lombok.*;
 
 @Getter

@@ -1,7 +1,7 @@
 package com.rideflowauthservice.service;
 
+import com.rideflow.rideflowentityservice.models.Passenger;
 import com.rideflowauthservice.exception.EmailNotFoundException;
-import com.rideflowauthservice.models.Passenger;
 import com.rideflowauthservice.repositories.PassengerRepository;
 import com.rideflowauthservice.security.PassengerPrinciple;
 import org.jspecify.annotations.NonNull;

@@ -1,7 +1,8 @@
 package com.rideflowauthservice.repositories;
 
 
-import com.rideflowauthservice.models.Booking;
+
+import com.rideflow.rideflowentityservice.models.Booking;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface BookingRepository extends JpaRepository<Booking,Long> {

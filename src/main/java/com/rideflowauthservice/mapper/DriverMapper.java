@@ -1,10 +1,11 @@
 package com.rideflowauthservice.mapper;
 
 
+import com.rideflow.rideflowentityservice.models.Driver;
 import com.rideflowauthservice.dto.driver.DriverRequestDTO;
 import com.rideflowauthservice.dto.driver.DriverResponseDTO;
 import com.rideflowauthservice.dto.driver.DriverSummaryDTO;
-import com.rideflowauthservice.models.Driver;
+
 
 public class DriverMapper {
 

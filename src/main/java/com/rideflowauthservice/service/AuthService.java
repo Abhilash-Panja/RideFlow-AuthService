@@ -1,10 +1,10 @@
 package com.rideflowauthservice.service;
 
 
+import com.rideflow.rideflowentityservice.models.Passenger;
 import com.rideflowauthservice.dto.auth.PassengerSignupRequest;
 import com.rideflowauthservice.dto.passenger.PassengerResponseDTO;
 import com.rideflowauthservice.mapper.PassengerMapper;
-import com.rideflowauthservice.models.Passenger;
 import com.rideflowauthservice.repositories.PassengerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;

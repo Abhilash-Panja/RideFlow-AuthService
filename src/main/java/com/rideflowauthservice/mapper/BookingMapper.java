@@ -1,9 +1,10 @@
 package com.rideflowauthservice.mapper;
 
 
+import com.rideflow.rideflowentityservice.models.Booking;
 import com.rideflowauthservice.dto.booking.BookingResponseDTO;
 import com.rideflowauthservice.dto.review.ReviewSummaryDTO;
-import com.rideflowauthservice.models.Booking;
+
 
 public class BookingMapper {
 
