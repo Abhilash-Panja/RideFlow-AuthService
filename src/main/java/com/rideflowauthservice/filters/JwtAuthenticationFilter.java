@@ -25,8 +25,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final CustomUserDetailsService userDetailsService;
-    private final RequestMatcher requestMatcher = PathPatternRequestMatcher.withDefaults()
-            .matcher("/api/v1/auth/login");
+    private final RequestMatcher requestMatcher =
+            PathPatternRequestMatcher.withDefaults()
+                    .matcher("/api/v1/auth/validate");
     public JwtAuthenticationFilter(JwtService jwtService, CustomUserDetailsService userDetailsService) {
         this.jwtService = jwtService;
         this.userDetailsService = userDetailsService;
@@ -55,7 +56,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             UserDetails userDetails= userDetailsService.loadUserByUsername(email);
             if(jwtService.isTokenValid(token,userDetails.getUsername())){
                 //And here Authenticated place we are sending null bcz we are already authenticated
-                UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken=new UsernamePasswordAuthenticationToken(userDetails,null);
+                UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken =
+                        new UsernamePasswordAuthenticationToken(
+                                userDetails,
+                                null,
+                                userDetails.getAuthorities()
+                        );
                 //Main use case WebAuthenticationDetailsSource().buildDetails(request) is to convert HttpRequest to Spring Understandable format
                 usernamePasswordAuthenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 //After Authenticating SuccessFully we are storing in SecurityContextHolder

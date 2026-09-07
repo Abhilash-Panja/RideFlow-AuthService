@@ -31,7 +31,7 @@ public class PassengerPrinciple implements UserDetails {
 
     @Override
     public String getUsername() {
-        return user.getPassengerName();
+        return user.getEmail();
     }
 
 

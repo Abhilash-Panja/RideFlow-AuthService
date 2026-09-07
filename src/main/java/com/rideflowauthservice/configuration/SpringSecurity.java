@@ -33,8 +33,11 @@ public class SpringSecurity {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs", "/v3/api-docs/**", "/v3/api-docs.yaml").permitAll()
                         .requestMatchers("/api/v1/auth/signUp", "/api/v1/auth/login").permitAll()
+                        .dispatcherTypeMatchers(jakarta.servlet.DispatcherType.ERROR).permitAll()
                 )
+
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/auth/validate").authenticated()
                 )

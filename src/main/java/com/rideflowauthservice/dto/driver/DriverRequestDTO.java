@@ -10,5 +10,5 @@ import lombok.*;
 @Builder
 public class DriverRequestDTO {
     private String driverName;
-    private String licenceNumber;
+    private String licenseNumber;
 }
