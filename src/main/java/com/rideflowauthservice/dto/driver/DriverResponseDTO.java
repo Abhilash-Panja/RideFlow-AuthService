@@ -10,5 +10,5 @@ import lombok.*;
 public class DriverResponseDTO {
     private Long id;
     private String driverName;
-    private String licenceNumber;
+    private String licenseNumber;
 }
