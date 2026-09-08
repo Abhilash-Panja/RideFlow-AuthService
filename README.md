@@ -1,48 +1,131 @@
 # RideFlow Auth Service
 
-RideFlow Auth Service handles passenger account registration and authentication. It uses Spring Security with JWTs and returns the generated token both in the response body and in an HTTP-only cookie.
+RideFlow Auth Service handles passenger authentication for the RideFlow platform.
 
-## Responsibilities
+It supports:
 
-- register a passenger account
-- authenticate a passenger using email/password
-- generate JWT access tokens
-- set the JWT in an HTTP-only `Jwt_Token` cookie
-- validate authenticated requests through a JWT authentication filter
-- load passenger data from MySQL through Spring Data JPA
+* passenger registration
+* email/password authentication
+* JWT generation
+* HTTP-only JWT cookies
+* protected endpoint validation
+* Spring Security integration
+* Swagger/OpenAPI documentation
+
+---
 
 ## Runtime
 
-| Property | Value |
-|---|---|
-| Application name | `Rideflow-AuthService` |
-| Default port | `8080` |
-| Database | MySQL / `uberdb` |
-| Shared model dependency | `com.rideflow:Rideflow-EntityService:0.0.2-SNAPSHOT` |
+| Property          | Value                  |
+| ----------------- | ---------------------- |
+| Application       | `Rideflow-AuthService` |
+| Port              | `8080`                 |
+| Database          | MySQL / `uberdb`       |
+| Authentication    | Spring Security + JWT  |
+| JWT Transport     | `Jwt_Token` cookie     |
+| Entity Library    | `0.0.7-SNAPSHOT`       |
+| API Documentation | Springdoc OpenAPI      |
 
-No explicit `server.port` is currently configured, so Spring Boot's default `8080` is used.
+There is currently no explicit `server.port` configuration, so Spring Boot uses its default port:
+
+```text
+8080
+```
+
+---
 
 ## Authentication Flow
 
 ```mermaid
 sequenceDiagram
-    participant C as Client
-    participant A as AuthController
-    participant S as Spring Security
-    participant J as JwtService
+    participant Client
+    participant Auth as AuthController
+    participant Security as Spring Security
     participant DB as MySQL
+    participant JWT as JwtService
 
-    C->>A: POST /api/v1/auth/login
-    A->>S: authenticate(email, password)
-    S->>DB: load passenger
-    DB-->>S: passenger + password hash
-    S-->>A: authenticated principal
-    A->>J: generateToken(principal)
-    J-->>A: JWT
-    A-->>C: 200 + token body + HttpOnly Jwt_Token cookie
+    Client->>Auth: POST /api/v1/auth/login
+
+    Auth->>Security: Authenticate email/password
+
+    Security->>DB: Load passenger
+    DB-->>Security: Passenger
+
+    Security-->>Auth: Authentication successful
+
+    Auth->>JWT: Generate JWT
+    JWT-->>Auth: Signed token
+
+    Auth-->>Client: 200 OK + Jwt_Token cookie
 ```
 
-## API
+---
+
+## JWT Validation Flow
+
+```text
+GET /api/v1/auth/validate
+        ↓
+JwtAuthenticationFilter
+        ↓
+Read Jwt_Token Cookie
+        ↓
+Extract Passenger Email
+        ↓
+Load Passenger
+        ↓
+Validate JWT
+        ↓
+Create Authentication Object
+        ↓
+Populate SecurityContext
+        ↓
+AuthController
+```
+
+---
+
+## Swagger / OpenAPI
+
+Swagger UI:
+
+```text
+http://localhost:8080/swagger-ui.html
+```
+
+OpenAPI JSON:
+
+```text
+http://localhost:8080/v3/api-docs
+```
+
+OpenAPI YAML:
+
+```text
+http://localhost:8080/v3/api-docs.yaml
+```
+
+Documented paths:
+
+```text
+/api/v1/auth/**
+```
+
+Springdoc may redirect:
+
+```text
+/swagger-ui.html
+```
+
+to:
+
+```text
+/swagger-ui/index.html
+```
+
+---
+
+## API Reference
 
 Base path:
 
@@ -50,206 +133,635 @@ Base path:
 /api/v1/auth
 ```
 
-### Sign Up
+| Method | Endpoint    | Access    | Purpose                     |
+| ------ | ----------- | --------- | --------------------------- |
+| POST   | `/signUp`   | Public    | Register a passenger        |
+| POST   | `/login`    | Public    | Authenticate passenger      |
+| GET    | `/validate` | Protected | Validate JWT authentication |
+
+---
+
+# 1. Passenger Sign Up
+
+Endpoint:
 
 ```http
 POST /api/v1/auth/signUp
-Content-Type: application/json
+```
+
+Example request:
+
+```json
+{
+  "email": "anita.rideflow@example.com",
+  "password": "RideFlowDemo@123",
+  "phoneNumber": "9000000001",
+  "name": "Anita Sharma",
+  "role": "PASSENGER"
+}
+```
+
+Expected response:
+
+```text
+201 Created
+```
+
+The passenger information is persisted in MySQL.
+
+---
+
+# 2. Login
+
+Endpoint:
+
+```http
+POST /api/v1/auth/login
+```
+
+Example request:
+
+```json
+{
+  "email": "anita.rideflow@example.com",
+  "password": "RideFlowDemo@123"
+}
+```
+
+Expected response:
+
+```text
+200 OK
+```
+
+A successful login generates a JWT.
+
+The token is returned and also added to a cookie named:
+
+```text
+Jwt_Token
+```
+
+Typical response flow:
+
+```text
+Email + Password
+       ↓
+AuthenticationManager
+       ↓
+Passenger loaded
+       ↓
+Password verified
+       ↓
+JWT generated
+       ↓
+Jwt_Token cookie created
+       ↓
+200 OK
+```
+
+---
+
+## JWT Cookie
+
+Authentication uses a cookie named:
+
+```text
+Jwt_Token
+```
+
+The cookie is configured as HTTP-only.
+
+This helps prevent client-side JavaScript from directly reading the JWT.
+
+For local development, the cookie currently uses:
+
+```text
+Secure = false
+```
+
+A production HTTPS environment should use:
+
+```text
+Secure = true
+```
+
+---
+
+# 3. Validate Authentication
+
+Endpoint:
+
+```http
+GET /api/v1/auth/validate
+```
+
+This endpoint requires a valid JWT cookie.
+
+Successful response:
+
+```text
+Success
+```
+
+---
+
+## How JWT Validation Works
+
+The current `JwtAuthenticationFilter` runs for the protected validation endpoint.
+
+It performs the following steps:
+
+```text
+Request
+   ↓
+Find Jwt_Token cookie
+   ↓
+Extract token
+   ↓
+Extract email from JWT subject
+   ↓
+Load passenger using email
+   ↓
+Check JWT signature and expiration
+   ↓
+Compare JWT email with UserDetails username
+   ↓
+Create UsernamePasswordAuthenticationToken
+   ↓
+Store Authentication in SecurityContext
+   ↓
+Continue filter chain
+```
+
+If the cookie is missing or authentication fails, the request is rejected.
+
+---
+
+## JWT Subject
+
+The JWT subject currently contains:
+
+```text
+Passenger email
+```
+
+Example:
+
+```text
+anita.rideflow@example.com
+```
+
+The token also contains the passenger role as a claim.
+
+---
+
+## Current JWT Validation Logic
+
+The token is considered valid when:
+
+```text
+JWT subject == authenticated passenger email
+```
+
+and:
+
+```text
+JWT has not expired
+```
+
+`PassengerPrinciple.getUsername()` currently returns the passenger email, so the comparison is consistent with the JWT subject.
+
+---
+
+## Spring Security Rules
+
+Public endpoints:
+
+```text
+POST /api/v1/auth/signUp
+
+POST /api/v1/auth/login
+```
+
+Protected endpoint:
+
+```text
+GET /api/v1/auth/validate
+```
+
+Swagger/OpenAPI endpoints are also allowed without authentication:
+
+```text
+/swagger-ui.html
+/swagger-ui/**
+/v3/api-docs
+/v3/api-docs/**
+/v3/api-docs.yaml
+```
+
+---
+
+## Testing With Swagger
+
+Start the application and open:
+
+```text
+http://localhost:8080/swagger-ui.html
+```
+
+Recommended testing sequence:
+
+```text
+1. POST /api/v1/auth/signUp
+2. POST /api/v1/auth/login
+3. GET  /api/v1/auth/validate
+```
+
+---
+
+## Testing Authentication Correctly
+
+### Step 1 — Register Passenger
+
+Call:
+
+```text
+POST /api/v1/auth/signUp
 ```
 
 Example:
 
 ```json
 {
-  "email": "passenger@example.com",
-  "password": "StrongPassword123",
-  "phoneNumber": "9876543210",
+  "email": "anita.rideflow@example.com",
+  "password": "RideFlowDemo@123",
+  "phoneNumber": "9000000001",
   "name": "Anita Sharma",
   "role": "PASSENGER"
 }
 ```
 
-The shared `Role` enum currently contains:
+---
+
+### Step 2 — Login
+
+Call:
 
 ```text
-PASSENGER
-DRIVER
-ADMIN
-```
-
-Successful creation returns `201 Created`.
-
-### Login
-
-```http
 POST /api/v1/auth/login
-Content-Type: application/json
 ```
+
+Example:
 
 ```json
 {
-  "email": "passenger@example.com",
-  "password": "StrongPassword123"
+  "email": "anita.rideflow@example.com",
+  "password": "RideFlowDemo@123"
 }
 ```
 
-On success:
+Check that the response contains:
 
-- HTTP status: `200 OK`
-- response body contains the JWT
-- response header includes an HTTP-only cookie named `Jwt_Token`
+```text
+Set-Cookie: Jwt_Token=...
+```
 
-Current local configuration builds the cookie with:
+---
 
-- `HttpOnly=true`
-- `Secure=false`
-- `Path=/`
-- expiry controlled by `cookie.expiration-ms`
+### Step 3 — Validate
 
-`Secure=false` is appropriate only for local HTTP development. Production HTTPS should use a secure cookie.
+Call:
 
-### Validate Authentication
-
-```http
+```text
 GET /api/v1/auth/validate
 ```
 
-This route is protected by Spring Security and requires a valid authentication token/cookie.
-
-Current success body:
+If the browser/Swagger client sends the stored cookie automatically, the response should be:
 
 ```text
 Success
 ```
 
-## Security Rules
+---
 
-The current `SecurityFilterChain` permits:
+## Negative Testing
+
+Useful authentication tests include:
+
+### Invalid Password
 
 ```text
-POST /api/v1/auth/signUp
 POST /api/v1/auth/login
 ```
 
-and requires authentication for:
+with an incorrect password.
+
+Expected:
+
+```text
+Authentication failure
+```
+
+---
+
+### Validate Without JWT
 
 ```text
 GET /api/v1/auth/validate
 ```
 
-A custom JWT filter runs before Spring Security's username/password authentication filter.
+without the `Jwt_Token` cookie.
 
-## Tech Stack
-
-- Java 17
-- Spring Boot 4.1.0
-- Spring MVC
-- Spring Security
-- Spring Data JPA / Hibernate
-- MySQL
-- JJWT 0.13.0
-- Lombok
-- Gradle
-- shared RideFlow EntityService models
-
-## Prerequisites
-
-- JDK 17+
-- MySQL
-- database `uberdb`
-- the required EntityService snapshot available in Maven Local
-
-Because this service currently pins:
+Expected:
 
 ```text
-com.rideflow:Rideflow-EntityService:0.0.2-SNAPSHOT
+401 Unauthorized
 ```
 
-you must either have that historical snapshot available or update the dependency to a compatible currently published EntityService version.
+---
 
-## Database Setup
+### Expired JWT
 
-Create the database:
+Send an expired token.
+
+Expected:
+
+```text
+401 Unauthorized
+```
+
+---
+
+### Modified JWT
+
+Modify any part of the JWT manually.
+
+Signature validation should fail.
+
+---
+
+## Database Configuration
+
+Current local database:
+
+```text
+uberdb
+```
+
+Create it using:
 
 ```sql
 CREATE DATABASE uberdb;
 ```
 
-Current local configuration uses:
+Typical configuration:
 
 ```properties
 spring.datasource.url=jdbc:mysql://localhost:3306/uberdb
 spring.datasource.username=root
 spring.datasource.password=root
-spring.jpa.hibernate.ddl-auto=validate
+spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
 ```
 
-For local or deployed environments, prefer overriding configuration externally:
+Hibernate configuration:
 
-```text
-SPRING_DATASOURCE_URL=jdbc:mysql://localhost:3306/uberdb
-SPRING_DATASOURCE_USERNAME=root
-SPRING_DATASOURCE_PASSWORD=<password>
-JWT_SECRET=<strong-secret>
-JWT_EXPIRATION_MS=3600000
-COOKIE_EXPIRATION_MS=3600000
+```properties
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.format_sql=true
 ```
 
-Do not use a checked-in development JWT secret in a deployed environment.
+---
 
-## Run
+## Shared Entity Dependency
+
+Auth Service currently uses:
+
+```gradle
+implementation 'com.rideflow:Rideflow-EntityService:0.0.7-SNAPSHOT'
+```
+
+and resolves it through:
+
+```gradle
+mavenLocal()
+```
+
+Therefore EntityService should be published before running Auth Service.
+
+---
+
+## Publish EntityService
+
+From the EntityService project:
+
+### Windows
 
 ```bash
-# Linux/macOS
-./gradlew bootRun
+gradlew.bat publishToMavenLocal
+```
 
-# Windows
+### Linux / macOS
+
+```bash
+./gradlew publishToMavenLocal
+```
+
+---
+
+## Technology Stack
+
+* Java 17
+* Spring Boot 4.1.0
+* Spring MVC
+* Spring Security
+* Spring Data JPA
+* Hibernate
+* MySQL
+* JJWT
+* Springdoc OpenAPI
+* Lombok
+* Gradle
+* RideFlow EntityService
+
+---
+
+## Main Dependencies
+
+Important dependencies include:
+
+```text
+Spring Web MVC
+Spring Security
+Spring Data JPA
+MySQL Connector
+JJWT
+Springdoc OpenAPI
+Lombok
+RideFlow EntityService
+```
+
+---
+
+## Project Structure
+
+```text
+src/main/java/
+└── ...
+    ├── advice/
+    ├── configuration/
+    │   ├── OpenApiConfig.java
+    │   └── SpringSecurity.java
+    ├── controller/
+    │   └── AuthController.java
+    ├── dto/
+    ├── filters/
+    │   └── JwtAuthenticationFilter.java
+    ├── mapper/
+    ├── repository/
+    ├── security/
+    ├── service/
+    └── RideflowAuthServiceApplication.java
+```
+
+---
+
+## Run the Application
+
+### Windows
+
+```bash
 gradlew.bat bootRun
 ```
 
-Build:
+### Linux / macOS
 
 ```bash
-./gradlew clean build
+./gradlew bootRun
 ```
 
-Test:
+Application:
+
+```text
+http://localhost:8080
+```
+
+Swagger:
+
+```text
+http://localhost:8080/swagger-ui.html
+```
+
+---
+
+## Run Tests
+
+### Windows
+
+```bash
+gradlew.bat test
+```
+
+### Linux / macOS
 
 ```bash
 ./gradlew test
 ```
 
-## Project Structure
+---
+
+## Security Notes
+
+The current implementation is suitable for local development and learning, but several improvements would be important before production deployment.
+
+### Externalize JWT Secret
+
+The JWT signing secret should not be committed directly in:
 
 ```text
-src/main/java/com/rideflowauthservice/
-├── advice/              # global exception handling
-├── configuration/       # security and password encoder configuration
-├── controller/          # AuthController
-├── dto/                 # auth/passenger/driver/booking DTOs
-├── filters/             # JWT authentication filter
-├── mapper/              # DTO/entity mapping
-├── repository/          # persistence access
-├── security/            # authenticated principal and handlers
-├── service/             # auth, JWT and user-details services
-└── RideflowAuthServiceApplication.java
+application.properties
 ```
 
-## Integration Notes
+Prefer:
 
-- This service currently does **not** register with RideFlow's Eureka server.
-- It shares domain classes through `Rideflow-EntityService`.
-- It uses the same development `uberdb` database used by several RideFlow services.
-- Authentication is currently focused on passenger login/signup.
+```text
+JWT_SECRET
+```
 
-## API Documentation
+through environment configuration.
 
-This service does not currently include Springdoc/OpenAPI. The REST contract above reflects the checked-in controller implementation.
+---
 
-A natural next step is to add OpenAPI documentation and a Bearer/JWT security scheme.
+### Externalize Database Credentials
+
+Instead of keeping:
+
+```properties
+spring.datasource.username=root
+spring.datasource.password=root
+```
+
+in source control, use environment variables or secrets management.
+
+---
+
+### Enable Secure Cookies
+
+Production HTTPS deployments should use:
+
+```text
+Secure=true
+```
+
+for authentication cookies.
+
+---
+
+### Cookie SameSite Policy
+
+A production application should explicitly decide an appropriate:
+
+```text
+SameSite
+```
+
+policy depending on frontend/backend deployment architecture.
+
+---
+
+## Current Implementation Notes
+
+* Auth Service currently does not register with Eureka.
+* Authentication uses JWT stored in the `Jwt_Token` cookie.
+* `/signUp` and `/login` are public.
+* `/validate` is protected.
+* JWT subject is the passenger email.
+* The authentication filter validates the token against the passenger's email.
+* Swagger/OpenAPI is enabled for `/api/v1/auth/**`.
+* Local cookie configuration uses `Secure=false`.
+* Development database credentials are currently present in application configuration.
+* Security-sensitive values should be externalized before production deployment.
+
+---
+
+## Future Improvements
+
+* refresh-token support
+* logout endpoint that clears the JWT cookie
+* token revocation strategy
+* password reset flow
+* email verification
+* rate limiting for login attempts
+* secure secret management
+* production cookie configuration
+* integration tests for authentication flows
+* centralized authentication through an API Gateway
+
+---
 
 ## Parent Project
 
-See the full system:
+See the complete RideFlow project:
 
 [RideFlow](https://github.com/Abhilash-Panja/RideFlow)
