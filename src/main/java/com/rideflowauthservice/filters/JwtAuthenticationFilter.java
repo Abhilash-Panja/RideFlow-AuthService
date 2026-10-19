@@ -12,9 +12,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
-import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
-import org.springframework.security.web.util.matcher.NegatedRequestMatcher;
-import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -23,11 +20,11 @@ import java.io.IOException;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
+    private static final String TOKEN_COOKIE = "Jwt_Token";
+
     private final JwtService jwtService;
     private final CustomUserDetailsService userDetailsService;
-    private final RequestMatcher requestMatcher =
-            PathPatternRequestMatcher.withDefaults()
-                    .matcher("/api/v1/auth/validate");
+
     public JwtAuthenticationFilter(JwtService jwtService, CustomUserDetailsService userDetailsService) {
         this.jwtService = jwtService;
         this.userDetailsService = userDetailsService;
@@ -37,42 +34,50 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request,
                                     @NonNull HttpServletResponse response,
                                     @NonNull FilterChain filterChain) throws ServletException, IOException {
-        String token=null;
-        if(request.getCookies()!=null){
-            for(Cookie cookie: request.getCookies()){
-                if(cookie.getName().equals("Jwt_Token")){
-                    token=cookie.getValue();
-                    break;
+        String token = findToken(request);
+
+        try {
+            if (token != null) {
+                String email = jwtService.extractUserEmail(token);
+                UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+
+                if (jwtService.isTokenValid(token, userDetails.getUsername())) {
+                    UsernamePasswordAuthenticationToken authentication =
+                            new UsernamePasswordAuthenticationToken(
+                                    userDetails,
+                                    null,
+                                    userDetails.getAuthorities());
+                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
                 }
             }
+        } catch (RuntimeException ex) {
+            // Invalid tokens should be treated as anonymous requests. The security
+            // chain will return the standard 401 response for protected endpoints.
+            SecurityContextHolder.clearContext();
         }
-        if(token==null){
-            // user couldn't provide any jwt-token so don't move forward
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            return;
+
+        filterChain.doFilter(request, response);
+    }
+
+    private String findToken(HttpServletRequest request) {
+        if (request.getCookies() == null) {
+            return null;
         }
-        String email=jwtService.extractUserEmail(token);
-        if(email!=null){
-            UserDetails userDetails= userDetailsService.loadUserByUsername(email);
-            if(jwtService.isTokenValid(token,userDetails.getUsername())){
-                //And here Authenticated place we are sending null bcz we are already authenticated
-                UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken =
-                        new UsernamePasswordAuthenticationToken(
-                                userDetails,
-                                null,
-                                userDetails.getAuthorities()
-                        );
-                //Main use case WebAuthenticationDetailsSource().buildDetails(request) is to convert HttpRequest to Spring Understandable format
-                usernamePasswordAuthenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                //After Authenticating SuccessFully we are storing in SecurityContextHolder
-                SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
+        for (Cookie cookie : request.getCookies()) {
+            if (TOKEN_COOKIE.equals(cookie.getName())) {
+                return cookie.getValue();
             }
         }
-        filterChain.doFilter(request, response); // ALWAYS continue the chain
+        return null;
     }
+
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        RequestMatcher requestMatcher1=new NegatedRequestMatcher(requestMatcher);
-        return requestMatcher1.matches(request);
+        String path = request.getServletPath();
+        return path.equals("/api/v1/auth/signUp")
+                || path.equals("/api/v1/auth/login")
+                || path.startsWith("/swagger-ui")
+                || path.startsWith("/v3/api-docs");
     }
 }

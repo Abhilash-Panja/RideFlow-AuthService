@@ -30,6 +30,9 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import jakarta.validation.Valid;
+import java.util.Map;
 
 @Tag(name = "Passenger authentication")
 @RestController
@@ -40,7 +43,7 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
 
-    @Value("${cookie.expiration-ms}")
+    @Value("${cookie.expiration-seconds}")
     private long cookieExpiry;
 
     @Operation(operationId = "rideFlowAuthService_signUp", summary = "Register a passenger account",
@@ -58,7 +61,7 @@ public class AuthController {
                     content = @Content)
     })
     @PostMapping("/signUp")
-    public ResponseEntity<PassengerResponseDTO> signUp(@RequestBody PassengerSignupRequest passengerSignupRequestDto){
+    public ResponseEntity<PassengerResponseDTO> signUp(@Valid @RequestBody PassengerSignupRequest passengerSignupRequestDto){
         PassengerResponseDTO passengerResponseDTO=authService.signUpPassenger(passengerSignupRequestDto);
        return new ResponseEntity<>(passengerResponseDTO,HttpStatus.CREATED);
     }
@@ -81,7 +84,7 @@ public class AuthController {
                     content = @Content)
     })
     @PostMapping("/login")
-    public ResponseEntity<PassengerLoginResponse>login(@RequestBody PassengerLoginRequest passengerLoginRequest, HttpServletResponse servletResponse){
+    public ResponseEntity<PassengerLoginResponse>login(@Valid @RequestBody PassengerLoginRequest passengerLoginRequest, HttpServletResponse servletResponse){
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(passengerLoginRequest.getEmail(), passengerLoginRequest.getPassword())
         );
@@ -114,10 +117,9 @@ public class AuthController {
                     content = @Content)
     })
     @GetMapping("/validate")
-    public ResponseEntity<?>validate( HttpServletRequest servletRequest){
-        for(Cookie cookie: servletRequest.getCookies()){
-            System.out.println(cookie.getValue());
-        }
-        return ResponseEntity.status(HttpStatus.OK).body("Success");
+    public ResponseEntity<?> validate(@AuthenticationPrincipal PassengerPrinciple principal) {
+        return ResponseEntity.ok(Map.of(
+                "authenticated", true,
+                "email", principal.getUsername()));
     }
 }
