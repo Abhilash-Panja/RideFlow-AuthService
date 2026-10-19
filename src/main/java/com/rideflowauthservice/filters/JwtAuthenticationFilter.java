@@ -2,7 +2,6 @@ package com.rideflowauthservice.filters;
 
 import com.rideflowauthservice.service.CustomUserDetailsService;
 import com.rideflowauthservice.service.JwtService;
-import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
@@ -52,7 +51,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                 }
             }
-        } catch (JwtException | RuntimeException ex) {
+        } catch (RuntimeException ex) {
             // Invalid tokens should be treated as anonymous requests. The security
             // chain will return the standard 401 response for protected endpoints.
             SecurityContextHolder.clearContext();
